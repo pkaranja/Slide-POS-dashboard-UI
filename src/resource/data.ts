@@ -119,13 +119,13 @@ export const navItems: NavItem[] = [
     label: "Dashboard",
   },
   {
-    title: "User",
+    title: "User management",
     href: "/dashboard/user",
     icon: "user",
     label: "user",
   },
   {
-    title: "Employee",
+    title: "Staff management",
     href: "/dashboard/employee",
     icon: "employee",
     label: "employee",
@@ -135,6 +135,12 @@ export const navItems: NavItem[] = [
     href: "/dashboard/profile",
     icon: "profile",
     label: "profile",
+  },
+  {
+    title: "Business settings",
+    href: "/dashboard/business",
+    icon: "settings",
+    label: "settings",
   },
   {
     title: "Login",

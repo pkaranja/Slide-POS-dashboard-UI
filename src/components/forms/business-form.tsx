@@ -1,5 +1,9 @@
 "use client";
+import CountrySelect from  "@/components/country-picker"
+import TimezonePicker from  "@/components/timezone-picker"
+import SlugGenerator from  "@/components/slug-generator"
 import { Button } from "@/components/ui/button";
+import { UploadButton } from "@/components/file-upload";
 import {
   Form,
   FormControl,
@@ -8,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea"
 import { Heading } from "@/components/ui/heading";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +21,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +31,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-//import FileUpload from "../file-upload";
+import FileUpload from "../file-upload";
 import { useToast } from "../ui/use-toast";
+
+
 const ImgSchema = z.object({
   fileName: z.string(),
   name: z.string(),
@@ -36,15 +45,20 @@ const ImgSchema = z.object({
   fileUrl: z.string(),
   url: z.string(),
 });
-export const IMG_MAX_LIMIT = 3;
+
+export const IMG_MAX_LIMIT = 1;
+
 const formSchema = z.object({
   name: z
     .string()
-    .min(3, { message: "Product Name must be at least 3 characters" }),
+    .min(3, { message: "Business name must be at least 3 characters" }),
   imgUrl: z
     .array(ImgSchema)
-    .max(IMG_MAX_LIMIT, { message: "You can only add up to 3 images" })
-    .min(1, { message: "At least one image must be added." }),
+    .max(IMG_MAX_LIMIT, { message: "You can only add one image" })
+    .min(1, { message: "Pleaser upload business logo." }),
+  slug: z
+    .string()
+    ._addCheck({ message: "Business must have a slug" }),
   description: z
     .string()
     .min(3, { message: "Product description must be at least 3 characters" }),
@@ -68,10 +82,32 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const title = initialData ? "Edit business" : "Create business";
-  const description = initialData ? "Edit your business details." : "Add a new business";
-  const toastMessage = initialData ? "Business details updated." : "Business created.";
-  const action = initialData ? "Save changes" : "Create";
+  const title = initialData ? "Edit business" : "Edit business";
+  const description = initialData ? "Edit your business details." : "Edit your business details";
+  const toastMessage = initialData ? "Business details updated." : "Business details updated.";
+  const action = initialData ? "Save changes" : "Save changes";
+
+  //TODO: Default timezone set
+  //const [timezone, setTimezone] = useState<string>('eat');
+  const [timezone, setTimezone] = useState<string | undefined>();
+  const handleTimezoneChange = (value: string) => {
+    setTimezone(value);
+  };
+
+  //const [branchTimezone, setBranchTimezone] = useState<string>('eat');
+  const [branchTimezone, setBranchTimezone] = useState<string | undefined>();
+  const handleBranchTimezoneChange = (value: string) => {
+    setBranchTimezone(value);
+  };
+
+
+  //TODO: Default country set
+  //const [country, setCountry] = useState<string>('TZ');
+  const [country, setCountry] = useState<string | undefined>();
+  const handleCountryChange = (value: string) => {
+    setCountry(value);
+  };
+
 
   const defaultValues = initialData
     ? initialData
@@ -123,8 +159,6 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
     }
   };
 
-
-
   const triggerImgUrlValidation = () => form.trigger("imgUrl");
 
   return (
@@ -148,17 +182,78 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-8 w-full"
         >
+
           <div className="md:grid md:grid-cols-3 gap-8">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Business name</FormLabel>
+                  <FormControl>
+                    <SlugGenerator loading={loading} placeholder="Business name" field={field}/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="logo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logo</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      onChange={field.onChange}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="emailAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Email Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="mobileNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile Number</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Mobile Number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
                   <FormControl>
                     <Input
                       disabled={loading}
-                      placeholder="Product name"
+                      placeholder="Phone Number"
                       {...field}
                     />
                   </FormControl>
@@ -166,16 +261,17 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="description"
+              name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Address</FormLabel>
                   <FormControl>
                     <Input
                       disabled={loading}
-                      placeholder="Product description"
+                      placeholder="Address"
                       {...field}
                     />
                   </FormControl>
@@ -183,53 +279,239 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="price"
+              name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price</FormLabel>
+                  <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input type="number" disabled={loading} {...field} />
+                    <Input
+                      disabled={loading}
+                      placeholder="City"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="category"
+              name="country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    disabled={loading}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          defaultValue={field.value}
-                          placeholder="Select a category"
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {/* @ts-ignore  */}
-                      {categories.map((category) => (
-                        <SelectItem key={category._id} value={category._id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <CountrySelect value={country} onChange={handleCountryChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timeZone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time Zone</FormLabel>
+                  <FormControl>
+                    <TimezonePicker value={timezone} onChange={handleTimezoneChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="currencies"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Currency"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="businessCategories"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Categories</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Business Categories"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
+          <div className="md:grid md:grid-cols-1 gap-8">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      disabled={loading}
+                      placeholder="Business description"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
+            <div className="flex items-center justify-between">
+              <Heading title="Main Branch" description="Edit main branch details" />
+              {initialData && (
+                <Button
+                  disabled={loading}
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setOpen(true)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <Separator />
+          </div>
+
+          <div className="md:grid md:grid-cols-3 gap-8">
+            <FormField
+              control={form.control}
+              name="branchName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Branch name</FormLabel>
+                  <FormControl>
+                    <SlugGenerator loading={loading} placeholder="Branch name" field={field}/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="branchEmailAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Email Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="branchPhoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Phone Number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="branchAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="branchCity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="City" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="openingTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Opening Time</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Opening Time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="closingTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Closing Time</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Closing Time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="branchTimeZone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time Zone</FormLabel>
+                  <FormControl>
+                    <TimezonePicker value={branchTimezone} onChange={handleBranchTimezoneChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <Button disabled={loading} className="ml-auto" type="submit">
             {action}
           </Button>
